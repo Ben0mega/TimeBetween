@@ -1,0 +1,281 @@
+<html>
+	<head>
+		<title> Timer </title>
+		<script type="text/javascript">
+			var canvas;
+			var ctx;
+			var start;
+
+			function toggleTimer(evt){
+				console.log(evt);
+				if(evt.target.form){
+					return;
+				}
+				if(start){
+					var nows = new Date();
+					table.push([
+							start,
+							nows,
+							(nows.getTime()-start.getTime())/1000,
+							document.getElementById('comment').value
+							]);
+					document.getElementById('comment').value = '';
+
+					start = undefined;
+					if(player.getPlayerState() != 2){
+						player.pauseVideo();
+						console.log("Now not playing");
+					}
+					refreshTable();
+				} else {
+					start = new Date();
+					if(player.getPlayerState() != 1){
+						player.loadVideoById(videos[index]);
+						index += 1;
+						index = index %videos.length;
+						player.playVideo();
+						console.log("Now playing");
+					}
+				}
+				evt.preventDefault();
+			}
+			document.onkeydown=toggleTimer;
+
+			function setup(){
+				document.getElementById("ignore_form").onsubmit = ignoreEvent;
+				document.getElementById("comment_form").onsubmit = ignoreEvent;
+				canvas = document.getElementById("timer");
+				ctx = canvas.getContext("2d");
+
+				var tmp = localStorage.getItem("timer_data");
+				if(! tmp){
+					table = []
+				} else {
+					table = JSON.parse(tmp);
+					for(var i = 0; i < table.length; ++i){
+						for(var j = 0; j < table[i].length-2; ++j){
+							table[i][j] = new Date(table[i][j]);
+						}
+					}
+				}
+				refreshTable();
+			}
+
+			window.setInterval(function () {
+				draw();
+			}, 10);
+
+			function draw() {
+				if(!ctx){
+					return;
+				}
+				console.log(player.getPlayerState());
+				ctx.clearRect(0, 0, 800, 400);
+				ctx.fillStyle="#000";
+
+				ctx.font="150px serif";
+				ctx.textBaseline = "top";
+				if(start){
+					var diff = (Date.now() - start.getTime())/1000;
+
+					var diffMin = (diff/(60)).toFixed(0);
+					var diffHours = (diff/(24*60)).toFixed(0);
+
+					var diffSecond = (diff % 60).toFixed(3);
+					ctx.fillText(format(diffHours)+":"+format(diffMin)+":"+format(diffSecond), 0, 0, 800);
+				} else {
+					ctx.fillText("Paused", 0, 0);
+				}
+			}
+
+			function format(val){
+				var ret = val.toString();
+				if(val < 10){
+					ret = "0"+ret;
+				}
+				return ret;
+			}
+
+			function ignoreEvent(evt){
+				evt.preventDefault();
+				document.getElementById('timer').focus();
+			}
+
+			function refreshTable(){
+				var tbl = document.getElementById('results_so_far');
+
+				while(tbl.rows.length > 1){
+					tbl.deleteRow(-1);
+				}
+
+				for(var i = 0; i < table.length; ++i){
+					var row = tbl.insertRow();
+					var r = table[i];
+					for(var j = 0; j < r.length; ++j){
+						var cell = row.insertCell();
+						cell.appendChild(document.createTextNode(r[j].toString()));
+					}
+				}
+				document.getElementById('timer').focus();
+				localStorage.setItem("timer_data", JSON.stringify(table));
+			}
+
+			function clearMemory(){
+				if(!confirm("Are you sure you want to delete the local memory?")){
+					return;
+				}
+				localStorage.clear();
+				table = [];
+				refreshTable();
+			}
+
+			function download(filename, outext) {
+				var pom = document.createElement('a');
+				pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(outext));
+				pom.setAttribute('download', filename);
+				pom.click();
+			}
+
+			function makeCSV(){
+				var out = "Start time, End time, Duration (sec), Comment";
+				for(var i = 0; i < table.length; ++i){
+					var r = table[i];
+					out += "\n";
+					for(var j = 0; j < r.length; ++j){
+						out += r[j].toString();
+						if(j != r.length-1){
+							out += ",";
+						}
+					}
+				}
+				return out;
+			}
+		</script>
+	</head>
+	<body onload="setup();">
+		<div>
+			<canvas id="timer" width="800" height="400" tabindex="1">
+				Your browser does not support canvas - get something newer than the President.
+			</canvas>
+		</div>
+		<div>
+			<form id="comment_form">
+				Comment for entry: <input type="text" name="comment" id="comment"/>
+			</form>
+			<form id="ignore_form">
+				<button onclick="download('timer.csv', makeCSV());"> Download as CSV </button>
+				<button onclick="clearMemory();"> Clear local memory </button>
+			</form>
+			<table id="results_so_far" border="2">
+				<tr>
+					<th>
+						Start time
+					</th>
+					<th>
+						End time
+					</th>
+					<th>
+						Duration (sec)
+					</th>
+					<th>
+						Comment
+					</th>
+				</tr>
+			</table>
+		</div>
+
+		<div style="visibility:hidden;">
+			<div id="ytplayer"></div>
+		</div>
+		<script>
+			// Load the IFrame Player API code asynchronously.
+			var tag = document.createElement('script');
+			tag.src = "https://www.youtube.com/player_api";
+			var firstScriptTag = document.getElementsByTagName('script')[0];
+			firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+			// Replace the 'ytplayer' element with an <iframe> and
+			// YouTube player after the API code downloads.
+			var player;
+			function onYouTubePlayerAPIReady() {
+				player = new YT.Player('ytplayer', {
+					height: '390',
+					width: '640',
+					events: {
+						'onReady': onPlayerReady,
+						'onStateChange': onPlayerStateChange
+					},
+					videoId: 'cdwal5Kw3Fc'
+				});
+			}
+
+			var videos = [
+					{
+						'videoId': 'UVQ7l2u5XgU', // big
+						'startSeconds':26
+					},
+					{
+						'videoId': 'KEI4qSrkPAs' // numb
+					},
+					{
+						'videoId': 'Mh3Kk5tZSmo' // ?
+					},
+					{
+						'videoId': 'Mm3ypbAbLJ8' // wizard
+					},
+					{
+						'videoId': 'kLp_Hh6DKWc' // hall
+					},
+					{
+						'videoId': '9E6b3swbnWg' // nocturn
+					},
+					{
+						'videoId': 'AzlMeTxVdH8' // yoshimi
+					},
+					{
+						'videoId': '4Tr0otuiQuU' // sonata
+					},
+					{
+						'startSeconds': 79,
+						'videoId': 'wdzRodvyTGc' // fire
+					},
+					{
+						'videoId': 'xgFTvLw_nJo' // don juan
+					},
+					{
+						'videoId': 'zkfkJCyqCBc' // she
+					},
+					{
+						'videoId': 'wdzRodvyTGc' // waltz
+					}
+			];
+			var index = 0;
+
+
+			function onPlayerReady(event) {
+				player.setLoop(true);
+				player.setVolume(100);
+				if(start){
+					player.loadVideoById(videos[index]);
+					index += 1;
+					index = index %videos.length;
+					player.playVideo();
+					console.log("Playing");
+				} else {
+					player.pauseVideo();
+					console.log("Not playing");
+				}
+			}
+
+			function onPlayerStateChange(event){
+				if(event.data == YT.PlayerState.ENDED){
+					player.loadVideoById(videos[index]);
+					index += 1;
+					index = index %videos.length;
+					player.playVideo();
+				}
+			}
+		</script>
+
+	</body>
+</html>
