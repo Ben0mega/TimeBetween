@@ -79,7 +79,7 @@
 					var diff = (Date.now() - start.getTime())/1000;
 
 					var diffMin = (diff/(60)).toFixed(0);
-					var diffHours = (diff/(24*60)).toFixed(0);
+					var diffHours = (diff/(60*60)).toFixed(0);
 
 					var diffSecond = (diff % 60).toFixed(3);
 					ctx.fillText(format(diffHours)+":"+format(diffMin)+":"+format(diffSecond), 0, 0, 800);
@@ -220,6 +220,10 @@
 					{
 						'startSeconds': 23,
 						'videoId': 'VbfpW0pbvaU' // stiches
+					},
+					{
+						'startSeconds': 96,
+						'videoId': 'KQ6zr6kCPj8' //party rock
 					},
 					{
 						'videoId': 'Mh3Kk5tZSmo' // logical song
