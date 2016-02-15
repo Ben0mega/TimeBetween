@@ -78,8 +78,9 @@
 				if(start){
 					var diff = (Date.now() - start.getTime())/1000;
 
-					var diffMin = (diff/(60)).toFixed(0);
-					var diffHours = (diff/(60*60)).toFixed(0);
+					var diffHours = Math.floor(diff/(60*60));
+					var diffMin = ((diff-diffHours*60)/(60)).toFixed(0);
+					diffHours = diffHours.toFixed(0);
 
 					var diffSecond = (diff % 60).toFixed(3);
 					ctx.fillText(format(diffHours)+":"+format(diffMin)+":"+format(diffSecond), 0, 0, 800);
